@@ -5,7 +5,7 @@ import time
 class SHT21:
     """SHT21 provides way to measure temperature and humidity."""
 
-    _SOFT_RESET = 0xFE
+    _SOFTRESET = 0xFE
     _I2C_ADDRESS = 0x40
 
     _TRIGGER_TEMPERATURE_NO_HOLD = 0xF3
