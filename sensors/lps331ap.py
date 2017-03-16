@@ -25,8 +25,8 @@ class LPS331AP:
 
         # SWRESET
         swreset = [
-            I2C.Message(self._CTRL_REG2),
-            I2C.Message(self._BOOT_MASK | self._SWRESET_MASK),
+            I2C.Message([self._CTRL_REG2]),
+            I2C.Message([self._BOOT_MASK | self._SWRESET_MASK]),
         ]
         self.i2c.transfer(self._I2C_ADDRESS, swreset)
         while self._wait_swreset():
