@@ -11,3 +11,4 @@ Contains:
 
 """
 from .sht21 import SHT21
+from .lps331ap import LPS331AP
