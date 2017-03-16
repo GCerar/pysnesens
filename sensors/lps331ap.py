@@ -54,21 +54,21 @@ class LPS331AP:
         """Returns False when BOOT bit is 0, otherwise True."""
         self.i2c.write(chr(self._CTRL_REG2))
         ctrl_reg2 = self.i2c.read(1)
-        return bool(ctrl_reg2 & self._BOOT_MASK)
+        return bool(ord(ctrl_reg2) & self._BOOT_MASK)
 
 
     def _wait_pressure(self):
         """Returns False when P_DA bit is set to 1, otherwise True."""
         self.i2c.write(chr(self._STATUS_REG))
         status_reg = self.i2c.read(1)
-        return not bool(status_reg & self._PRESS_STATUS_MASK)
+        return not bool(ord(status_reg) & self._PRESS_STATUS_MASK)
 
 
     def _wait_temperature(self):
         """Returns False when T_DA bit is set to 1, otherwise True."""
         self.i2c.write(chr(self._STATUS_REG))
         status_reg = self.i2c.read(1)
-        return not bool(status_reg & self._TEMP_STATUS_MASK)
+        return not bool(ord(status_reg) & self._TEMP_STATUS_MASK)
 
 
     #def wait_press_temp(self):
@@ -86,14 +86,14 @@ class LPS331AP:
 
     def _get_pressure_from_buffer(self, data):
         """Pout = SP / 4096; XL, L, H register"""
-        unadjusted = data[0] | data[1] << 8 | data[2] << 16
+        unadjusted = ord(data[0]) | ord(data[1]) << 8 | ord(data[2]) << 16
         unadjusted /= 4096
         return unadjusted
 
 
     def _get_temperature_from_buffer(self, data):
         """T[C] = 42.5 + ST/480"""
-        unadjusted = data[0] | data[1] << 8
+        unadjusted = ord(data[0]) | ord(data[1]) << 8
         unadjusted /= 480
         return unadjusted
 
