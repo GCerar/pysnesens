@@ -36,7 +36,7 @@ class LPS331AP:
 
     def _wait_swreset(self):
         get_status_bits = [
-            I2C.Message(self._STATUS_REG),
+            I2C.Message([self._STATUS_REG]),
             I2C.Message([0x00], read=True)
         ]
 
