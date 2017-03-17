@@ -12,18 +12,17 @@ class SHT21:
     _TRIGGER_HUMIDITY_NO_HOLD = 0xF5
     _STATUS_BITS_MASK = 0xFFFC
 
-    I2C_SLAVE = 0x0703
-    I2C_SLAVE_FORCE = 0x0706
+    _I2C_SLAVE = 0x0703
 
 
     _TEMPERATURE_WAIT_TIME = 0.086  # (datasheet: typ=66, max=85)
     _HUMIDITY_WAIT_TIME = 0.030  # (datasheet: typ=22, max=29)
 
 
-    def __init__(self, i2c_number=1):
-        """i2c_number=0 for old PRi, 1 for new RPi."""
-        self.i2c = open('/dev/i2c-%s' % i2c_number, 'r+', 0)
-        fcntl.ioctl(self.i2c, self.I2C_SLAVE, self._I2C_ADDRESS)
+    def __init__(self, bus=1):
+        """bus=0 for old PRi, 1 for new RPi."""
+        self.i2c = open('/dev/i2c-%s' % bus, 'r+', 0)
+        fcntl.ioctl(self.i2c, self._I2C_SLAVE, self._I2C_ADDRESS)
         self.i2c.write(chr(self._SOFTRESET))
         time.sleep(0.050)
 

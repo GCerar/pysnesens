@@ -70,6 +70,10 @@ class LPS331AP:
         self.i2c.write(bytearray([self._CTRL_REG1, self._PD_MODE_DISABLE]))
 
 
+    def _powerdown(self):
+        self.i2c.write(bytearray([self._CTRL_REG1, self._PD_MODE_ENABLE]))
+
+
     def _swreset(self):
         """Set BOOT and SWRESET bit to 1 for full reset."""
         self.i2c.write(
@@ -109,20 +113,15 @@ class LPS331AP:
 
     def _get_pressure_from_bytarray(self, data):
         """Pout = SP / 4096;"""
-	
-        #unadjusted = (data[0] << 8) + data[1]
         unadjusted = int(codecs.encode(data, 'hex'), 16)
-	#unadjusted = int.from_bytes(data, byteorder='little', signed=False)
         unadjusted /= 4096
         return unadjusted
 
 
     def _get_temperature_from_bytearray(self, data):
         """T[C] = 42.5 + ST/480"""
-        #unadjusted = (data[0] << 16) + (data[1] << 8) + data[1]
         unadjusted = int(codecs.encode(data, 'hex'), 16)
         unadjusted -= 1 << 16  # temperature can be negative
-        #unadjusted = int.from_bytes(data, byteorder='little', signed=False)
         unadjusted /= 480.0
         unadjusted += 42.5
         return unadjusted
