@@ -130,7 +130,7 @@ class LPS331AP:
 
         data = bytearray([])
         for address in [self._PRESS_OUT_XL, self._PRESS_OUT_L, self._PRESS_OUT_H]:
-            self.i2c.write(address)
+            self.i2c.write(chr(address))
             data.append(ord(self.i2c.read(1)))
 
         return self._get_pressure_from_buffer(data)
@@ -145,7 +145,7 @@ class LPS331AP:
 
         data = bytearray([])
         for address in [self._TEMP_OUT_L, self._TEMP_OUT_H]:
-            self.i2c.write(address)
+            self.i2c.write(chr(address))
             data.append(ord(self.i2c.read(1)))
 
         return self._get_temperature_from_buffer(data)
