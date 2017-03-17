@@ -108,20 +108,22 @@ class LPS331AP:
 
 
     def _get_pressure_from_bytarray(self, data):
-        """Pout = SP / 4096; XL, L, H register"""
-        unadjusted = (ord(data[0]) << 8) + ord(data[1])
-        #unadjusted = int(codecs.encode(data, 'hex'), 16)
-        #unadjusted = int.from_bytes(data, byteorder='little', signed=False)
+        """Pout = SP / 4096;"""
+	
+        #unadjusted = (data[0] << 8) + data[1]
+        unadjusted = int(codecs.encode(data, 'hex'), 16)
+	#unadjusted = int.from_bytes(data, byteorder='little', signed=False)
         unadjusted /= 4096
         return unadjusted
 
 
     def _get_temperature_from_bytearray(self, data):
         """T[C] = 42.5 + ST/480"""
-        unadjusted = (ord(data[0]) << 16) + (ord(data[1]) << 8) + ord(data[1])
-        #unadjusted = int(codecs.encode(data, 'hex'), 16)
+        #unadjusted = (data[0] << 16) + (data[1] << 8) + data[1]
+        unadjusted = int(codecs.encode(data, 'hex'), 16)
+        unadjusted -= 1 << 16  # temperature can be negative
         #unadjusted = int.from_bytes(data, byteorder='little', signed=False)
-        unadjusted /= 480
+        unadjusted /= 480.0
         unadjusted += 42.5
         return unadjusted
 
