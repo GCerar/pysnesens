@@ -63,7 +63,7 @@ class LPS331AP:
         self.i2c.write(bytearray([self._CTRL_REG1, self._PD_MODE_DISABLE]))
 
 
-    def _swreset():
+    def _swreset(self):
         """Set BOOT and SWRESET bit to 1 for full reset."""
         self.i2c.write(
             bytearray([self._CTRL_REG2, self._BOOT_MASK | self._SWRESET_MASK])
