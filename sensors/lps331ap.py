@@ -19,6 +19,8 @@ class LPS331AP:
     _CTRL_REG2 = 0x21
     _STATUS_REG = 0x27
 
+    _WHO_AM_I = 0x0F
+
     _PRESS_OUT_XL = 0x28
     _PRESS_OUT_L = 0x29
     _PRESS_OUT_H = 0x2A
@@ -57,6 +59,10 @@ class LPS331AP:
 
         # Sensor starts in power-down mode.
         self._power_up()
+
+        self.i2c.write(chr(self._WHO_AM_I))
+        if ord(self.i2c.read(1)) != 0xBB:
+            raise Exception('0xF0 (HWO_AM_I) register returns incorrect value.')
 
     def _power_up(self):
         """Set power-down bit to 1, which disables powerdown mode."""
