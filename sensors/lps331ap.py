@@ -1,5 +1,6 @@
 from fcntl import ioctl
 import time
+import codecs
 
 
 def concat_hex(*args):
@@ -51,7 +52,7 @@ class LPS331AP:
 
 
     def __init__(self, bus=1):
-        self.i2c = open('/dev/i2c-%s' % bus, 'r+', 0)
+        self.i2c = open('/dev/i2c-%s' % bus, mode='r+', buffering=0)
         ioctl(self.i2c, self._I2C_SLAVE, self._I2C_ADDRESS)
 
         #self._power_up()
@@ -108,14 +109,16 @@ class LPS331AP:
 
     def _get_pressure_from_bytarray(self, data):
         """Pout = SP / 4096; XL, L, H register"""
-        unadjusted = int.from_bytes(data, byteorder='little', signed=False)
+        unadjusted = int(codecs.encode(data, 'hex'), 16)
+        #unadjusted = int.from_bytes(data, byteorder='little', signed=False)
         unadjusted /= 4096
         return unadjusted
 
 
     def _get_temperature_from_bytearray(self, data):
         """T[C] = 42.5 + ST/480"""
-        unadjusted = int.from_bytes(data, byteorder='little', signed=False)
+        unadjusted = int(codecs.encode(data, 'hex'), 16)
+        #unadjusted = int.from_bytes(data, byteorder='little', signed=False)
         unadjusted /= 480
         unadjusted += 42.5
         return unadjusted
