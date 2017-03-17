@@ -54,8 +54,8 @@ class LPS331AP:
         self.i2c = open('/dev/i2c-%s' % bus, mode='r+', buffering=0)
         ioctl(self.i2c, self._I2C_SLAVE, self._I2C_ADDRESS)
 
-        self._power_up()
-        self._swreset()
+        #self._power_up()
+        #self._swreset()
 
         # Sensor starts in power-down mode.
         self._power_up()
