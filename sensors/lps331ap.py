@@ -132,7 +132,7 @@ class LPS331AP:
             time.sleep(self._TIMEOUT)
 
         data = bytearray([])
-        for address in [self._PRESS_OUT_XL, self._PRESS_OUT_L, self._PRESS_OUT_H]:
+        for address in [self._PRESS_OUT_H, self._PRESS_OUT_L, self._PRESS_OUT_XL]:
             self.i2c.write(chr(address))
             data.append(ord(self.i2c.read(1)))
 
@@ -147,7 +147,7 @@ class LPS331AP:
             time.sleep(self._TIMEOUT)
 
         data = bytearray([])
-        for address in [self._TEMP_OUT_L, self._TEMP_OUT_H]:
+        for address in [self._TEMP_OUT_H, self._TEMP_OUT_L]:
             self.i2c.write(chr(address))
             data.append(ord(self.i2c.read(1)))
 
