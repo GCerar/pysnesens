@@ -133,7 +133,7 @@ class LPS331AP:
             self.i2c.write(chr(address))
             data.append(ord(self.i2c.read(1)))
 
-        return self._get_pressure_from_buffer(data)
+        return self._get_pressure_from_bytarray(data)
 
 
     def read_temperature(self):
@@ -148,7 +148,7 @@ class LPS331AP:
             self.i2c.write(chr(address))
             data.append(ord(self.i2c.read(1)))
 
-        return self._get_temperature_from_buffer(data)
+        return self._get_temperature_from_bytearray(data)
 
 
 
