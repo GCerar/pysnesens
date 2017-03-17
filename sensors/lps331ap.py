@@ -1,6 +1,7 @@
 from fcntl import ioctl
 import time
 import codecs
+import os
 
 
 def concat_hex(*args):
@@ -52,7 +53,8 @@ class LPS331AP:
 
 
     def __init__(self, bus=1):
-        self.i2c = open('/dev/i2c-%s' % bus, mode='r+', buffering=0)
+        #self.i2c = open('/dev/i2c-%s' % bus, mode='r+', buffering=0)
+        self.i2c = open('/dev/i2c-%s' % bus, os.O_RDWR)
         ioctl(self.i2c, self._I2C_SLAVE, self._I2C_ADDRESS)
 
         #self._power_up()
