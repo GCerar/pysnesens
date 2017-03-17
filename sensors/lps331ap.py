@@ -51,7 +51,7 @@ class LPS331AP:
 
 
     def __init__(self, bus=1):
-        self.i2c = open('/dev/i2c-%s' % bus, mode='r+', buffering=0)
+        self.i2c = open('/dev/i2c-%s' % bus, 'r+', 0)
         ioctl(self.i2c, self._I2C_SLAVE, self._I2C_ADDRESS)
 
         #self._power_up()
