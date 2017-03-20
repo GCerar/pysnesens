@@ -74,7 +74,7 @@ class SHT21:
         return unadjusted
 
 
-    def read_temperature(self):
+    def get_temperature(self):
         self.i2c.write(chr(self._TRIGGER_TEMPERATURE_NO_HOLD))
         time.sleep(self._TEMPERATURE_WAIT_TIME)
         data = self.i2c.read(3)  # 2 bytes of data + 1 byte CRC
@@ -82,7 +82,7 @@ class SHT21:
             return self._get_temperature_from_buffer(data)
 
 
-    def read_humidity(self):
+    def get_humidity(self):
         self.i2c.write(chr(self._TRIGGER_HUMIDITY_NO_HOLD))
         time.sleep(self._HUMIDITY_WAIT_TIME)
         data = self.i2c.read(3)  # 2 bytes of data + 1 byte CRC
@@ -100,3 +100,9 @@ class SHT21:
 
     def __exit__(self, type, value, traceback):
         self.close()
+
+
+if __name__ == '__main__':
+    sensor = SHT21()
+    print("Humidity: ", sensor.get_humidity(), "%")
+    print("Temperature: ", sensor.get_temperature(), "degC")

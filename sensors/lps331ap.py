@@ -1,166 +1,127 @@
 from fcntl import ioctl
 import time
-import codecs
-import os
 
 
-def concat_hex(*args):
-    reducer = lambda x, y: y + chr(x)
-    return reduce(reducer, args, '')
+
 
 
 class LPS331AP:
-    """Measures pressure."""
+    """Measure temperature, air pressure, indirectly altitude."""
 
-    # SDO connected to ground -> address: 0b011100
     _I2C_ADDRESS = 0x5C
 
 
-    # Usable registers
+    _WHO_AM_I = 0x0F
+    _RES_ADDR = 0x10
     _CTRL_REG1 = 0x20
     _CTRL_REG2 = 0x21
-    _STATUS_REG = 0x27
 
-    _WHO_AM_I = 0x0F
-
-    _PRESS_OUT_XL = 0x28
-    _PRESS_OUT_L = 0x29
-    _PRESS_OUT_H = 0x2A
-
-    _TEMP_OUT_L = 0x2B
-    _TEMP_OUT_H = 0x2C
-
-    # Usable on _CTRL_REG1
-    _PD_MODE_DISABLE = 0x80
-    _PD_MODE_ENABLE = 0x00
-
-    # Usable on _CTRL_REG2
-    _BOOT_MASK = 0x80
-    _SWRESET_MASK = 0x04
-    _TRIGGER_ONESHOT = 0x01
-
-    # Usable on _STATUS_REG
-    _PRESS_DA = 0x02  # Pressure data available
-    _PRESS_OR = 0x20  # Pressure data overrun
-
-    _TEMP_DA = 0x01
-    _TEMP_OR = 0x10
-
-    # From Linux kernel configuration
     _I2C_SLAVE = 0x0703
 
-    _TIMEOUT = 0.050
+    _ONE_SHOT_CONVERSION_TIME = 0.042  # 41545 us
+
+    __temperature = None
+    __pressure = None
+    __altitude = None
 
 
     def __init__(self, bus=1):
-        #self.i2c = open('/dev/i2c-%s' % bus, mode='r+', buffering=0)
-        self.i2c = open('/dev/i2c-%s' % bus, os.O_RDWR)
+        # Works only on Py2.7; Python3.x doesn't support unbuffered R/W
+        self.i2c = open('/dev/i2c-%s' % bus, mode='r+', buffering=0)
         ioctl(self.i2c, self._I2C_SLAVE, self._I2C_ADDRESS)
 
-        #self._power_up()
-        #self._swreset()
-
-        # Sensor starts in power-down mode.
-        self._power_up()
-
-        self.i2c.write(chr(self._WHO_AM_I))
-        if ord(self.i2c.read(1)) != 0xBB:
-            raise Exception('0xF0 (HWO_AM_I) register returns incorrect value.')
-
-    def _power_up(self):
-        """Set power-down bit to 1, which disables powerdown mode."""
-        self.i2c.write(bytearray([self._CTRL_REG1, self._PD_MODE_DISABLE]))
+        self._check_who_am_i()
+        self._configure()
+        self.one_shot()
 
 
-    def _powerdown(self):
-        self.i2c.write(bytearray([self._CTRL_REG1, self._PD_MODE_ENABLE]))
+    def _check_who_am_i(self):
+        self.i2c.write(bytearray([self._WHO_AM_I]))
+        who_am_i = ord(self.i2c.read(1))
+        if who_am_i != 0xBB:
+            raise Exception('This is not LPS331AP!')
 
 
-    def _swreset(self):
-        """Set BOOT and SWRESET bit to 1 for full reset."""
-        self.i2c.write(
-            bytearray([self._CTRL_REG2, self._BOOT_MASK | self._SWRESET_MASK])
-        )
-        while self._wait_status_bits():
-            time.sleep(self._TIMEOUT)
+    def _configure(self):
+        # Power down
+        self.i2c.write(bytearray([self._CTRL_REG1, 0x00]))
+
+        # Set highest precision
+        self.i2c.write(bytearray([self._RES_ADDR, 0x7A]))
+
+        # Power up + single shot mode
+        self.i2c.write(bytearray([self._CTRL_REG1, 0x84]))
 
 
-    def _wait_status_bits(self):
-        """Stop waiting when BOOT bit is 0."""
-        self.i2c.write(chr(self._CTRL_REG2))
-        ctrl_reg2 = ord(self.i2c.read(1))
-        return bool(ctrl_reg2 & self._BOOT_MASK)
+    def one_shot(self):
+        self.__altitude = None
+        self.__pressure = None
+        self.__temperature = None
+
+        self.i2c.write(bytearray([self._CTRL_REG2, 0x01]))
+        time.sleep(self._ONE_SHOT_CONVERSION_TIME)
 
 
-    def _wait_pressure(self):
-        """Returns False when P_DA bit is set to 1, otherwise True."""
-        self.i2c.write(chr(self._STATUS_REG))
-        status_reg = ord(self.i2c.read(1))
-        return not bool(status_reg & (self._PRESS_DA | self._PRESS_OR))
+    def _read_temperature(self):
+        self.i2c.write(bytearray([0x2B]))
+        msb = ord(self.i2c.read(1))
+
+        self.i2c.write(bytearray([0x2C]))
+        lsb = ord(self.i2c.read(1))
+
+        temperature = (msb << 8) | lsb
+        temperature -= 1 << 16  # Signed 16-bit variable
+        temperature = 42.5 + temperature / (120*4)
+        return temperature
 
 
-    def _wait_temperature(self):
-        """Returns False when T_DA bit is set to 1, otherwise True."""
-        self.i2c.write(chr(self._STATUS_REG))
-        status_reg = ord(self.i2c.read(1))
-        return not bool(status_reg & (self._TEMP_DA | self._TEMP_OR))
+    def _read_pressure(self):
+        self.i2c.write(bytearray([0x28]))
+        msb = ord(self.i2c.read(1))
+
+        self.i2c.write(bytearray([0x29]))
+        lsb = ord(self.i2c.read(1))
+
+        self.i2c.write(bytearray([0x2A]))
+        xlsb = ord(self.i2c.read(1))
+
+        pressure = (msb << 16) | (lsb << 8) | xlsb  # uint32
+        pressure /= 4096  # scale
+        return pressure
 
 
-    def _trigger_oneshot(self):
-        """Set ONESHOT bit to 1."""
-        self.i2c.write(
-            bytearray([self._CTRL_REG2, self._TRIGGER_ONESHOT])
-        )
+    def _read_altitude(self):
+        """From US Standard Atmosphere 1976 edition."""
+        pressure = self.read_pressure()
+        altitude_ft = (1 - (pressure/1013.25)**0.190284)*14366.45
+        altitude_m = altitude_ft / 3.280839895
+        return altitude_m
 
 
-    def _get_pressure_from_bytarray(self, data):
-        """Pout = SP / 4096;"""
-        unadjusted = int(codecs.encode(data, 'hex'), 16)
-        unadjusted /= 4096
-        return unadjusted
+    def get_pressure(self):
+        if self.__pressure is None:
+            self.__pressure = self._read_pressure()
+
+        return self.__pressure
 
 
-    def _get_temperature_from_bytearray(self, data):
-        """T[C] = 42.5 + ST/480"""
-        unadjusted = int(codecs.encode(data, 'hex'), 16)
-        unadjusted -= 1 << 16  # temperature can be negative
-        unadjusted /= 480.0
-        unadjusted += 42.5
-        return unadjusted
+    def get_temperature(self):
+        if self.__temperature is None:
+            self.__temperature = self._read_temperature()
+
+        return self.__temperature
 
 
-    def read_pressure(self):
-        """Read 3 bytes of pressure data."""
-        self._trigger_oneshot()
+    def get_altitude(self):
+        if self.__altitude is None:
+            self.__altitude = self._read_altitude()
 
-        while self._wait_pressure():
-            time.sleep(self._TIMEOUT)
-
-        data = bytearray([])
-        for address in [self._PRESS_OUT_H, self._PRESS_OUT_L, self._PRESS_OUT_XL]:
-            self.i2c.write(chr(address))
-            data.append(ord(self.i2c.read(1)))
-
-        return self._get_pressure_from_bytarray(data)
-
-
-    def read_temperature(self):
-        """Read 2 bytes of temperature data."""
-        self._trigger_oneshot()
-
-        while self._wait_temperature():
-            time.sleep(self._TIMEOUT)
-
-        data = bytearray([])
-        for address in [self._TEMP_OUT_H, self._TEMP_OUT_L]:
-            self.i2c.write(chr(address))
-            data.append(ord(self.i2c.read(1)))
-
-        return self._get_temperature_from_bytearray(data)
+        return self.__altitude
 
 
 
 if __name__ == '__main__':
     sensor = LPS331AP()
-    print(sensor.read_pressure())
-    print(sensor.read_temperature())
+    print("Temp (degC):", sensor.get_temperature())
+    print("Pressure (mBar):", sensor.get_pressure())
+    print("alt (m)"sensor.get_altitude())
