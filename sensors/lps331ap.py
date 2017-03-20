@@ -124,4 +124,4 @@ if __name__ == '__main__':
     sensor = LPS331AP()
     print("Temp (degC):", sensor.get_temperature())
     print("Pressure (mBar):", sensor.get_pressure())
-    print("alt (m)"sensor.get_altitude())
+    print("alt (m)", sensor.get_altitude())

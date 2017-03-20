@@ -104,5 +104,5 @@ class SHT21:
 
 if __name__ == '__main__':
     sensor = SHT21()
-    print("Humidity: ", sensor.get_humidity(), "%")
-    print("Temperature: ", sensor.get_temperature(), "degC")
+    print("Humidity (%):", sensor.get_humidity())
+    print("Temperature (degC):", sensor.get_temperature())
