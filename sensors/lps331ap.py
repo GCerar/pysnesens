@@ -59,31 +59,38 @@ class LPS331AP:
         self.__temperature = None
 
         self.i2c.write(bytearray([self._CTRL_REG2, 0x01]))
-        time.sleep(self._ONE_SHOT_CONVERSION_TIME)
+	while self._wait_status_bit():
+            time.sleep(self._ONE_SHOT_CONVERSION_TIME)
 
+
+    def _wait_status_bit(self):
+        self.i2c.write(bytearray([self._CTRL_REG2]))
+        status = ord(self.i2c.read(1))
+	return status != 0x00
+        
 
     def _read_temperature(self):
         self.i2c.write(bytearray([0x2B]))
-        msb = ord(self.i2c.read(1))
-
-        self.i2c.write(bytearray([0x2C]))
         lsb = ord(self.i2c.read(1))
 
+        self.i2c.write(bytearray([0x2C]))
+        msb = ord(self.i2c.read(1))
+
         temperature = (msb << 8) | lsb
-        temperature -= 1 << 16  # Signed 16-bit variable
-        temperature = 42.5 + temperature / (120*4)
+        temperature -= 1 << 16  # Signed int16
+        temperature = 42.5 + temperature / (120.0*4)
         return temperature
 
 
     def _read_pressure(self):
         self.i2c.write(bytearray([0x28]))
-        msb = ord(self.i2c.read(1))
+        xlsb = ord(self.i2c.read(1))
 
         self.i2c.write(bytearray([0x29]))
         lsb = ord(self.i2c.read(1))
 
         self.i2c.write(bytearray([0x2A]))
-        xlsb = ord(self.i2c.read(1))
+        msb = ord(self.i2c.read(1))
 
         pressure = (msb << 16) | (lsb << 8) | xlsb  # uint32
         pressure /= 4096  # scale
@@ -92,9 +99,12 @@ class LPS331AP:
 
     def _read_altitude(self):
         """From US Standard Atmosphere 1976 edition."""
-        pressure = self.read_pressure()
-        altitude_ft = (1 - (pressure/1013.25)**0.190284)*14366.45
-        altitude_m = altitude_ft / 3.280839895
+        pressure_0 = 1013.25
+        pressure = self.get_pressure()
+        temperature = self.get_temperature()
+        #altitude_ft = (1 - (pressure/1013.25)**0.190284)*14366.45
+        #altitude_m = altitude_ft / 3.280839895
+        altitude_m = ((pressure_0/pressure)**(1/5.257) - 1) * (temperature + 273.15) / 0.0065
         return altitude_m
 
 
