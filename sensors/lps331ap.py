@@ -67,7 +67,7 @@ class LPS331AP:
         self.i2c.write(bytearray([self._CTRL_REG2]))
         status = ord(self.i2c.read(1))
 	return status != 0x00
-        
+
 
     def _read_temperature(self):
         self.i2c.write(bytearray([0x2B]))
@@ -98,13 +98,11 @@ class LPS331AP:
 
 
     def _read_altitude(self):
-        """From US Standard Atmosphere 1976 edition."""
+        """WARNING: This is only approximation!"""
         pressure_0 = 1013.25
         pressure = self.get_pressure()
-        temperature = self.get_temperature()
-        #altitude_ft = (1 - (pressure/1013.25)**0.190284)*14366.45
-        #altitude_m = altitude_ft / 3.280839895
-        altitude_m = ((pressure_0/pressure)**(1/5.257) - 1) * (temperature + 273.15) / 0.0065
+        altitude_ft = (1 - (pressure/pressure_0)**0.190284)*145366.45
+        altitude_m = altitude_ft / 3.280839895
         return altitude_m
 
 
