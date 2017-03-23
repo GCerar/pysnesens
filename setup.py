@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='snesens',
@@ -7,6 +7,5 @@ setup(
     author_email='gregor.cerar@ijs.si',
     license='MIT',
 
-    packages=find_packages('sensors')
-
+    packages=['snesens', 'snesens.sensors']
 )
