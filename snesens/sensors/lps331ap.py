@@ -59,14 +59,15 @@ class LPS331AP:
         self.__temperature = None
 
         self.i2c.write(bytearray([self._CTRL_REG2, 0x01]))
-	while self._wait_status_bit():
-            time.sleep(self._ONE_SHOT_CONVERSION_TIME)
+
+        while self._wait_status_bit():
+                time.sleep(self._ONE_SHOT_CONVERSION_TIME)
 
 
     def _wait_status_bit(self):
         self.i2c.write(bytearray([self._CTRL_REG2]))
         status = ord(self.i2c.read(1))
-	return status != 0x00
+	    return status != 0x00
 
 
     def _read_temperature(self):
