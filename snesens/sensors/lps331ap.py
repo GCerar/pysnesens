@@ -53,6 +53,10 @@ class LPS331AP:
         self.i2c.write(bytearray([self._CTRL_REG1, 0x84]))
 
 
+    def close(self):
+        self.i2c.close()
+
+
     def one_shot(self):
         self.__altitude = None
         self.__pressure = None
